@@ -1,0 +1,28 @@
+[package]
+name = "cargo-clone-crate"
+version = "0.1.0"
+authors = ["Eric Huss <eric@huss.org>"]
+description = "Cargo subcommand to clone a repo from the registry."
+homepage = "https://github.com/ehuss/cargo-clone-crate"
+repository = "https://github.com/ehuss/cargo-clone-crate"
+readme = "README.md"
+categories = ["development-tools::cargo-plugins"]
+keywords = ["cargo"]
+license = "MIT"
+
+[dependencies]
+clap = "2.32"
+failure = "0.1"
+reqwest = "0.8"
+serde_json = "1.0"
+regex = "1.0"
+semver = "0.9"
+tar = { version = "0.4", default-features = false }
+flate2 = "1.0"
+
+[lib]
+name = "cargo_clone"
+
+[[bin]]
+name = "cargo-clone"
+path = "src/main.rs"
