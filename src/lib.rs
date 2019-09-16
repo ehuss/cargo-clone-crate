@@ -102,7 +102,7 @@ fn bitbucket(user: &str, name: &str) -> Result<(&'static str, String), Error> {
     );
     let mut repo_info = reqwest::get(api_url).context("Failed to fetch repo info from bitbucket.")?;
     let code = repo_info.status();
-    if code != StatusCode::Ok {
+    if !code.is_success() {
         bail!(
             "Failed to get repo info from bitbucket API `{}`: `{}`",
             api_url,
@@ -142,8 +142,8 @@ fn get_pkg_info(name: &str) -> Result<Value, Error> {
         .context("Failed to fetch package info from crates.io.")?;
     let code = pkg_info.status();
     match code {
-        StatusCode::Ok => {}
-        StatusCode::NotFound => bail!("Package `{}` not found on crates.io.", name),
+        StatusCode::OK => {}
+        StatusCode::NOT_FOUND => bail!("Package `{}` not found on crates.io.", name),
         _ => bail!("Failed to get package info from crates.io: `{}`", code),
     }
     let pkg_info: Value = pkg_info.json().context("Failed to convert to json.")?;
