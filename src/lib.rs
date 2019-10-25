@@ -16,14 +16,29 @@ use std::env;
 use std::process::Command;
 use tar::Archive;
 
-pub fn clone(method_name: &str, spec: &str, extra: &[&str]) -> Result<(), Error> {
+pub fn clone(
+    method_name: &str,
+    spec: &str,
+    version: Option<&str>,
+    extra: &[&str],
+) -> Result<(), Error> {
     let mut parts = spec.splitn(2, ':');
     let name = parts.next().unwrap();
+    let spec_version_req = parts.next();
+    if spec_version_req.is_some() && version.is_some() {
+        bail!("Cannot specify both a :version and --version.");
+    }
+    let version_req = version
+        .or(spec_version_req)
+        .map(check_semver_req)
+        .transpose()?;
     let pkg_info = get_pkg_info(name)?;
     let repo = get_repo(&pkg_info)?;
     let (method, repo) = match method_name {
         "auto" => {
-            if let Some(repo) = repo {
+            if version_req.is_some() {
+                ("crate", "".to_string())
+            } else if let Some(repo) = repo {
                 detect_repo(&repo)?
             } else {
                 ("crate", "".to_string())
@@ -38,12 +53,46 @@ pub fn clone(method_name: &str, spec: &str, extra: &[&str]) -> Result<(), Error>
         }
     };
     match method {
-        "crate" => clone_crate(spec, &pkg_info, extra)?,
-        "git" | "hg" | "pijul" | "fossil" => run_clone(method, &repo, extra)?,
+        "crate" => {
+            if !extra.is_empty() {
+                bail!("Got extra arguments, crate downloads take no extra arguments.");
+            }
+            clone_crate(name, version_req, &pkg_info)?;
+        }
+        "git" | "hg" | "pijul" | "fossil" => {
+            if let Some(version_req) = version_req {
+                bail!(
+                    "Specifying a version `{}` only works with the `crate` method.",
+                    version_req
+                );
+            }
+            run_clone(method, &repo, extra)?;
+        }
         _ => bail!("Unsupported method `{}`", method),
     }
 
     Ok(())
+}
+
+fn check_semver_req(version: &str) -> Result<String, Error> {
+    let first = version
+        .chars()
+        .nth(0)
+        .ok_or_else(|| format_err!("version is empty"))?;
+
+    let is_req = "<>=^~".contains(first) || version.contains('*');
+    if is_req {
+        Ok(version.parse::<semver::VersionReq>()?.to_string())
+    } else {
+        match semver::Version::parse(version) {
+            Ok(v) => Ok(format!("={}", v)),
+            Err(e) => Err(e).context(format_err!(
+                "`{}` is not a valid semver version.\n\
+                 Use an exact version like 1.2.3 or a version requirement expression.",
+                version
+            ))?,
+        }
+    }
 }
 
 fn detect_repo(repo: &str) -> Result<(&'static str, String), Error> {
@@ -100,7 +149,8 @@ fn bitbucket(user: &str, name: &str) -> Result<(&'static str, String), Error> {
         "https://api.bitbucket.org/2.0/repositories/{}/{}",
         user, name
     );
-    let mut repo_info = reqwest::get(api_url).context("Failed to fetch repo info from bitbucket.")?;
+    let mut repo_info =
+        reqwest::get(api_url).context("Failed to fetch repo info from bitbucket.")?;
     let code = repo_info.status();
     if !code.is_success() {
         bail!(
@@ -128,7 +178,8 @@ fn bitbucket(user: &str, name: &str) -> Result<(&'static str, String), Error> {
         .find(|c| {
             c["name"]
                 .as_str()
-                .expect("Could not get clone `name` from bitbucket.") == "https"
+                .expect("Could not get clone `name` from bitbucket.")
+                == "https"
         })
         .expect("Could not find `https` clone in bitbucket.")["href"]
         .as_str()
@@ -167,15 +218,7 @@ fn get_repo(pkg_info: &Value) -> Result<Option<String>, Error> {
 }
 
 /// Download a crate from crates.io.
-fn clone_crate(spec: &str, pkg_info: &Value, extra: &[&str]) -> Result<(), Error> {
-    let mut parts = spec.splitn(2, ':');
-    let name = parts.next().unwrap();
-    let version = parts.next();
-
-    if !extra.is_empty() {
-        bail!("Got extra arguments, crate downloads take no extra arguments.");
-    }
-
+fn clone_crate(name: &str, version_req: Option<String>, pkg_info: &Value) -> Result<(), Error> {
     let dst = env::current_dir()?;
 
     // Determine which version to download.
@@ -189,8 +232,8 @@ fn clone_crate(spec: &str, pkg_info: &Value, extra: &[&str]) -> Result<(), Error
         let v = semver::Version::parse(num).expect("Could not parse crate `num`.");
         (crate_version, v)
     });
-    let mut versions: Vec<_> = if let Some(version) = version {
-        let req = semver::VersionReq::parse(version)?;
+    let mut versions: Vec<_> = if let Some(version_req) = version_req {
+        let req = semver::VersionReq::parse(&version_req)?;
         versions
             .filter(|(_crate_version, ver)| req.matches(ver))
             .collect()
@@ -211,7 +254,8 @@ fn clone_crate(spec: &str, pkg_info: &Value, extra: &[&str]) -> Result<(), Error
         .as_str()
         .expect("Could not find `num` in crate version info.");
     println!("Downloading `{}`", dl_path);
-    let mut response = reqwest::get(&dl_path).context(format!("Failed to download `{}`", dl_path))?;
+    let mut response =
+        reqwest::get(&dl_path).context(format!("Failed to download `{}`", dl_path))?;
     // TODO: This could be much better.
     let mut body = Vec::new();
     response.copy_to(&mut body)?;

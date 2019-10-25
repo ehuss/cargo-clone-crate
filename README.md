@@ -24,7 +24,7 @@ You can also download the `crate` file directly from crates.io:
 
 The `crate` method can also take a version to fetch a specific version:
 
-`cargo clone --method=crate bitflags:=1.0.1`
+`cargo clone --version=1.0.1 bitflags`
 
 Extra arguments are passed to the VCS command:
 

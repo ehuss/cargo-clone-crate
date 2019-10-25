@@ -31,6 +31,12 @@ fn main() {
                         .help("Package name to clone."),
                 )
                 .arg(
+                    Arg::with_name("version")
+                        .long("version")
+                        .takes_value(true)
+                        .help("Version to download."),
+                )
+                .arg(
                     Arg::with_name("extra")
                         .allow_hyphen_values(true)
                         .multiple(true)
@@ -44,11 +50,12 @@ fn main() {
 
     let method = submatches.value_of("method").unwrap();
     let name = submatches.value_of("name").unwrap();
+    let version = submatches.value_of("version");
     let extra: Vec<&str> = submatches
         .values_of("extra")
         .map_or_else(Vec::new, |e| e.collect());
 
-    let result = cargo_clone::clone(method, name, &extra);
+    let result = cargo_clone::clone(method, name, version, &extra);
     if let Err(e) = result {
         eprintln!("Error: {}", e);
         for cause in e.iter_causes() {
