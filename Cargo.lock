@@ -106,7 +106,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-clone-crate"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
