@@ -1,4 +1,4 @@
-use failure::{bail, format_err, Error, ResultExt};
+use anyhow::{anyhow, bail, Context, Error};
 use flate2::read::GzDecoder;
 use regex::Regex;
 use reqwest;
@@ -71,7 +71,7 @@ fn check_semver_req(version: &str) -> Result<String, Error> {
     let first = version
         .chars()
         .nth(0)
-        .ok_or_else(|| format_err!("version is empty"))?;
+        .ok_or_else(|| anyhow!("version is empty"))?;
 
     let is_req = "<>=^~".contains(first) || version.contains('*');
     if is_req {
@@ -79,7 +79,7 @@ fn check_semver_req(version: &str) -> Result<String, Error> {
     } else {
         match semver::Version::parse(version) {
             Ok(v) => Ok(format!("={}", v)),
-            Err(e) => Err(e).context(format_err!(
+            Err(e) => Err(e).context(anyhow!(
                 "`{}` is not a valid semver version.\n\
                  Use an exact version like 1.2.3 or a version requirement expression.",
                 version
@@ -198,7 +198,7 @@ fn get_pkg_info(name: &str) -> Result<Value, Error> {
 fn get_repo(pkg_info: &Value) -> Result<Option<String>, Error> {
     let krate = pkg_info
         .get("crate")
-        .ok_or_else(|| format_err!("`crate` expected in pkg info"))?;
+        .ok_or_else(|| anyhow!("`crate` expected in pkg info"))?;
     let repo = &krate["repository"];
     if repo.is_string() {
         return Ok(Some(repo.as_str().unwrap().to_string()));

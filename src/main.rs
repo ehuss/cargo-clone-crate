@@ -55,7 +55,7 @@ fn main() {
     let result = cargo_clone::clone(method, name, version, &extra);
     if let Err(e) = result {
         eprintln!("Error: {}", e);
-        for cause in e.iter_causes() {
+        for cause in e.chain().skip(1) {
             eprintln!("Caused by: {}", cause);
         }
         exit(1);
