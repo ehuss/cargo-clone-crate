@@ -9,6 +9,7 @@ readme = "README.md"
 categories = ["development-tools::cargo-plugins"]
 keywords = ["cargo"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 clap = "2.33.0"

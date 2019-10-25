@@ -1,16 +1,9 @@
-#[macro_use]
-extern crate failure;
-extern crate flate2;
-extern crate regex;
-extern crate reqwest;
-extern crate semver;
-extern crate serde_json;
-extern crate tar;
-
-use failure::{Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
 use flate2::read::GzDecoder;
 use regex::Regex;
+use reqwest;
 use reqwest::StatusCode;
+use semver;
 use serde_json::Value;
 use std::env;
 use std::process::Command;

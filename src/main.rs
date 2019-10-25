@@ -1,13 +1,10 @@
-extern crate cargo_clone;
-#[macro_use]
-extern crate clap;
-
+use cargo_clone;
 use clap::{App, AppSettings, Arg, SubCommand};
 use std::process::exit;
 
 fn main() {
     let matches = App::new("cargo-clone")
-        .version(crate_version!())
+        .version(clap::crate_version!())
         .bin_name("cargo")
         .setting(AppSettings::GlobalVersion)
         .setting(AppSettings::SubcommandRequired)
