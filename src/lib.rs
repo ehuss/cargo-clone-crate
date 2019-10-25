@@ -246,6 +246,7 @@ fn clone_crate(spec: &str, pkg_info: &Value, extra: &[&str]) -> Result<(), Error
 
 /// Runs the clone process.
 fn run_clone(method: &str, repo: &str, extra: &[&str]) -> Result<(), Error> {
+    println!("Running: {} clone {} {}", method, repo, extra.join(" "));
     let status = Command::new(method)
         .arg("clone")
         .arg(repo)
