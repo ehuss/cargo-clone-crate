@@ -217,7 +217,7 @@ fn clone_crate(spec: &str, pkg_info: &Value, extra: &[&str]) -> Result<(), Error
     response.copy_to(&mut body)?;
     let gz = GzDecoder::new(body.as_slice());
     let mut tar = Archive::new(gz);
-    let base = format!("{}-{}", name, version);
+    let base = format!("{}-{}", name.to_lowercase(), version);
 
     for entry in tar.entries()? {
         let mut entry = entry.context("Failed to get tar entry.")?;
