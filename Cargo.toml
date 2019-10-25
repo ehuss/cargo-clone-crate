@@ -10,6 +10,7 @@ categories = ["development-tools::cargo-plugins"]
 keywords = ["cargo"]
 license = "MIT"
 edition = "2018"
+include = ["/src"]
 
 [dependencies]
 anyhow = "1.0.17"
