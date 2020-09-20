@@ -1,8 +1,34 @@
 use cargo_clone;
 use clap::{App, AppSettings, Arg, SubCommand};
-use std::process::exit;
+use env_logger::{Builder, Target};
+use std::{env, io::Write, process::exit};
+
+#[macro_use]
+extern crate log;
+use log::LevelFilter;
+
+fn start_logging() {
+    // Start the logger
+    let mut builder = Builder::from_default_env();
+
+    // Enable logging and set custom output for the app if there is no other logging levels specified
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "cargo_clone");
+        builder
+            .target(Target::Stdout)
+            .format(|buf, record| {
+                // Simply write the line without any additional content
+                writeln!(buf, "{}", record.args())
+            })
+            .filter(None, LevelFilter::Info);
+    }
+
+    builder.init();
+}
 
 fn main() {
+    start_logging();
+
     let matches = App::new("cargo-clone")
         .version(clap::crate_version!())
         .bin_name("cargo")
@@ -52,11 +78,17 @@ fn main() {
         .values_of("extra")
         .map_or_else(Vec::new, |e| e.collect());
 
-    let result = cargo_clone::clone(method, name, version, &extra);
+    let cloner = cargo_clone::Cloner::default().unwrap();
+    let result = cloner.clone(
+        cargo_clone::CloneMethodKind::from(method).unwrap(), 
+        name, 
+        version, 
+        &extra
+    );
     if let Err(e) = result {
-        eprintln!("Error: {}", e);
+        error!("Error: {}", e);
         for cause in e.chain().skip(1) {
-            eprintln!("Caused by: {}", cause);
+            error!("Caused by: {}", cause);
         }
         exit(1);
     }
