@@ -80,6 +80,7 @@ fn main() {
 
     let cloner = cargo_clone::Cloner::default().unwrap();
     let result = cloner.clone(
+        // UNWRAP: The argument parser should guarantee only sane values get passed here
         cargo_clone::CloneMethodKind::from(method).unwrap(), 
         name, 
         version, 

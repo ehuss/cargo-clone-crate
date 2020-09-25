@@ -63,6 +63,19 @@ impl CloneMethodKind {
     }
 }
 
+impl std::fmt::Display for CloneMethodKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            CloneMethodKind::Crate => write!(f, "CloneMethodKind::Crate"),
+            CloneMethodKind::Git => write!(f, "CloneMethodKind::Git"),
+            CloneMethodKind::Mercurial => write!(f, "CloneMethodKind::Mercurial"),
+            CloneMethodKind::Pijul => write!(f, "CloneMethodKind::Pijul"),
+            CloneMethodKind::Fossil => write!(f, "CloneMethodKind::Fossil"),
+            CloneMethodKind::Auto => write!(f, "CloneMethodKind::Auto"),
+        }
+    }
+}
+
 /// A struct containg all url and workspace information necessary to clone a crate.
 #[derive(Debug, Clone)]
 pub struct Cloner {
@@ -78,8 +91,8 @@ pub struct Cloner {
     /// Defaults to https://api.bitbucket.org/2.0/repositories
     bitbutcket_url: String,
 
-    /// Defaults to `std::env::current_dir()`
-    work_dir: PathBuf,
+    /// Output directory of the Crate source code. Defaults to `std::env::current_dir()`
+    out_dir: PathBuf,
 }
 
 fn check_semver_req(version: &str) -> Result<String, Error> {
@@ -136,14 +149,14 @@ impl Cloner {
         github_url: &str,
         gitlab_url: &str,
         bitbutcket_url: &str,
-        work_dir: &Path,
+        out_dir: &Path,
     ) -> Cloner {
         Cloner {
             registry_url: registry_url.to_string(),
             github_url: github_url.to_string(),
             gitlab_url: gitlab_url.to_string(),
             bitbutcket_url: bitbutcket_url.to_string(),
-            work_dir: work_dir.into(),
+            out_dir: out_dir.into(),
         }
     }
 
@@ -154,7 +167,7 @@ impl Cloner {
             github_url: DEFAULT_GITHUB_URL.to_string(),
             gitlab_url: DEFAULT_GITLAB_URL.to_string(),
             bitbutcket_url: DEFAULT_BITBUCKET_URL.to_string(),
-            work_dir: env::current_dir()?,
+            out_dir: env::current_dir()?,
         })
     }
 
@@ -184,39 +197,42 @@ impl Cloner {
             .transpose()?;
         let pkg_info = self.get_pkg_info(name)?;
         let repo = get_repo(&pkg_info)?;
-        let (method, repo) = match method_kind.command() {
-            "auto" => {
+        let (method, repo) = match method_kind {
+            CloneMethodKind::Auto => {
                 if version_req.is_some() {
-                    ("crate", "".to_string())
+                    (CloneMethodKind::Crate, "".to_string())
                 } else if let Some(repo) = repo {
                     self.detect_repo(&repo)?
                 } else {
-                    ("crate", "".to_string())
+                    (CloneMethodKind::Crate, "".to_string())
                 }
             }
-            "crate" => ("crate", "".to_string()),
+            CloneMethodKind::Crate => (method_kind, "".to_string()),
             _ => {
                 if repo.is_none() {
                     bail!("Could not find repository path in crates.io.");
                 }
-                (method_kind.command(), repo.unwrap())
+                (method_kind, repo.unwrap())
             }
         };
         match method {
-            "crate" => {
+            CloneMethodKind::Crate => {
                 if !extra.is_empty() {
                     bail!("Got extra arguments, crate downloads take no extra arguments.");
                 }
                 self.clone_crate(name, version_req, &pkg_info)?;
             }
-            "git" | "hg" | "pijul" | "fossil" => {
+            CloneMethodKind::Git
+            | CloneMethodKind::Mercurial
+            | CloneMethodKind::Pijul
+            | CloneMethodKind::Fossil => {
                 if let Some(version_req) = version_req {
                     bail!(
                         "Specifying a version `{}` only works with the `crate` method.",
                         version_req
                     );
                 }
-                self.run_clone(method, &repo, extra)?;
+                self.run_clone(method.command(), &repo, extra)?;
             }
             _ => bail!("Unsupported method `{}`", method),
         }
@@ -224,16 +240,16 @@ impl Cloner {
         Ok(())
     }
 
-    fn detect_repo(&self, repo: &str) -> Result<(&'static str, String), Error> {
+    fn detect_repo(&self, repo: &str) -> Result<(CloneMethodKind, String), Error> {
         if repo.ends_with(".git") {
-            return Ok(("git", repo.to_string()));
+            return Ok((CloneMethodKind::Git, repo.to_string()));
         }
         if let Some(c) = Regex::new(r"https?://(?:www\.)?github\.com/([^/]+)/([^/]+)")
             .unwrap()
             .captures(repo)
         {
             return Ok((
-                "git",
+                CloneMethodKind::Git,
                 format!(
                     "{}/{}/{}.git",
                     self.github_url,
@@ -247,7 +263,7 @@ impl Cloner {
             .captures(repo)
         {
             return Ok((
-                "git",
+                CloneMethodKind::Git,
                 format!(
                     "{}/{}/{}.git",
                     self.gitlab_url,
@@ -265,7 +281,7 @@ impl Cloner {
             return self.bitbucket(user, name);
         }
         if repo.starts_with("https://nest.pijul.com/") {
-            return Ok(("pijul", repo.to_string()));
+            return Ok((CloneMethodKind::Pijul, repo.to_string()));
         }
         bail!(
             "Could not determine the VCS from repo `{}`, \
@@ -274,7 +290,7 @@ impl Cloner {
         );
     }
 
-    fn bitbucket(&self, user: &str, name: &str) -> Result<(&'static str, String), Error> {
+    fn bitbucket(&self, user: &str, name: &str) -> Result<(CloneMethodKind, String), Error> {
         // Determine if it is git or hg.
         let api_url = &format!("{}/{}/{}", self.bitbutcket_url, user, name);
         let repo_info =
@@ -294,8 +310,8 @@ impl Cloner {
             .as_str()
             .expect("Could not get `scm` from bitbucket.");
         let method = match method {
-            "git" => "git",
-            "hg" => "hg",
+            "git" => CloneMethodKind::Git,
+            "hg" => CloneMethodKind::Mercurial,
             _ => bail!("Unexpected bitbucket scm: `{}`", method),
         };
         let clones = repo_info["links"]["clone"]
@@ -395,7 +411,7 @@ impl Cloner {
                 );
             }
 
-            entry.unpack_in(&self.work_dir).context(format!(
+            entry.unpack_in(&self.out_dir).context(format!(
                 "failed to unpack entry at `{}`",
                 entry_path.display()
             ))?;
@@ -410,7 +426,7 @@ impl Cloner {
             .arg("clone")
             .arg(repo)
             .args(extra)
-            .current_dir(&self.work_dir)
+            .current_dir(&self.out_dir)
             .status()
             .context(format!("Failed to run `{}`.", method))?;
         if !status.success() {
