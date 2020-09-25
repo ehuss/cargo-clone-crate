@@ -78,13 +78,14 @@ fn main() {
         .values_of("extra")
         .map_or_else(Vec::new, |e| e.collect());
 
-    let cloner = cargo_clone::Cloner::default().unwrap();
+    let cloner =
+        cargo_clone::Cloner::default().expect("Unable to determine the current working directory.");
     let result = cloner.clone(
         // UNWRAP: The argument parser should guarantee only sane values get passed here
-        cargo_clone::CloneMethodKind::from(method).unwrap(), 
-        name, 
-        version, 
-        &extra
+        cargo_clone::CloneMethodKind::from(method).unwrap(),
+        name,
+        version,
+        &extra,
     );
     if let Err(e) = result {
         error!("Error: {}", e);
