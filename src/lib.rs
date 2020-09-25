@@ -63,19 +63,6 @@ impl CloneMethodKind {
     }
 }
 
-impl std::fmt::Display for CloneMethodKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            CloneMethodKind::Crate => write!(f, "CloneMethodKind::Crate"),
-            CloneMethodKind::Git => write!(f, "CloneMethodKind::Git"),
-            CloneMethodKind::Mercurial => write!(f, "CloneMethodKind::Mercurial"),
-            CloneMethodKind::Pijul => write!(f, "CloneMethodKind::Pijul"),
-            CloneMethodKind::Fossil => write!(f, "CloneMethodKind::Fossil"),
-            CloneMethodKind::Auto => write!(f, "CloneMethodKind::Auto"),
-        }
-    }
-}
-
 /// A struct containg all url and workspace information necessary to clone a crate.
 #[derive(Debug, Clone)]
 pub struct Cloner {
@@ -234,7 +221,7 @@ impl Cloner {
                 }
                 self.run_clone(method.command(), &repo, extra)?;
             }
-            _ => bail!("Unsupported method `{}`", method),
+            _ => bail!("Unsupported method `{:?}`", method),
         }
 
         Ok(())
