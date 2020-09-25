@@ -221,7 +221,7 @@ impl Cloner {
                 }
                 self.run_clone(method.command(), &repo, extra)?;
             }
-            _ => bail!("Unsupported method `{:?}`", method),
+            CloneMethodKind::Auto => unreachable!(),
         }
 
         Ok(())
