@@ -70,8 +70,16 @@ fn unknown_crate() {
 
 #[test]
 fn clone_fossil() {
+    // Ensure `fossil` is a spawnable process on the machine
+    assert!(std::process::Command::new("fossil").output().is_ok());
+
     clone("fossil", "rs-graph", None, &["graph.fossil"]).unwrap();
     assert_downloaded("graph.fossil");
+
+    // Also delete the *-journal file
+    if Path::new("./graph.fossil-journal").exists() {
+        fs::remove_file(Path::new("./graph.fossil-journal")).unwrap();
+    }
 }
 
 #[test]
