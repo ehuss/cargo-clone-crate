@@ -1,6 +1,6 @@
 [package]
 name = "cargo-clone-crate"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Eric Huss <eric@huss.org>"]
 description = "Cargo subcommand to clone a repo from the registry."
 homepage = "https://github.com/ehuss/cargo-clone-crate"
