@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use anyhow::{anyhow, bail, Context, Error};
 use flate2::read::GzDecoder;
 use regex::Regex;
