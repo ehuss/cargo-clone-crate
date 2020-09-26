@@ -1,3 +1,9 @@
+//! A library to create a local clone of a Cargo package.
+//!
+//! This fetches the repository for a package as defined in the `repository`
+//! field of a Cargo package. If there is no repository, it can also fetch the
+//! `.crate` file from crates.io.
+
 #![warn(missing_docs)]
 use anyhow::{anyhow, bail, Context, Error};
 use flate2::read::GzDecoder;
@@ -27,11 +33,17 @@ pub const DEFAULT_REGISTRY_URL: &'static str = "https://crates.io";
 /// An enum representation of supported cloning methods.
 #[derive(Debug, Clone)]
 pub enum CloneMethodKind {
+    /// Downloads the `.crate` file from the registry and extracts it.
     Crate,
+    /// Clones using `git`.
     Git,
+    /// Clones using `hg`.
     Mercurial,
+    /// Clones using `pijul`.
     Pijul,
+    /// Clones using `fossil`.
     Fossil,
+    /// Attempts to automatically detect which method to use using heuristics.
     Auto,
 }
 
