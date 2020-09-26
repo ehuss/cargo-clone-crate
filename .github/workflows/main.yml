@@ -38,10 +38,12 @@ jobs:
     - name: Install fossil (Windows)
       run: |
         mkdir fossil
+        echo ::add-path::./fossil
         cd fossil
         curl -LJO https://www.fossil-scm.org/fossil/uv/fossil-w64-2.12.1.zip
         unzip fossil-w64-2.12.1.zip
-        echo ::add-path::`pwd`
+        curl -LJO https://curl.haxx.se/ca/cacert.pem
+        ./fossil set --global ssl-ca-location $(pwd)/cacert.pem
       if: matrix.os == 'windows-latest'
     - name: Install rust
       run: rustup update --no-self-update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
