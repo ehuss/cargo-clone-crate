@@ -48,4 +48,6 @@ jobs:
     - name: Install rust
       run: rustup update --no-self-update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
     - name: Run tests
+      env:
+        RUSTFLAGS: "-Dwarnings"
       run: cargo test
