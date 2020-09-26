@@ -1,9 +1,27 @@
 use anyhow::Error;
-use cargo_clone::clone;
-use std::fs;
-use std::path::Path;
+use cargo_clone::{CloneMethodKind, Cloner};
+use tempfile::TempDir;
 
-fn assert_err(err: Result<(), Error>, expected: &str) {
+fn clone(
+    method_name: &str,
+    spec: &str,
+    version: Option<&str>,
+    extra: &[&str],
+) -> Result<TempDir, Error> {
+    let td = tempfile::tempdir()?;
+    eprintln!("temp directory: {:?}", td.path());
+    let mut cloner = Cloner::new();
+    cloner.set_out_dir(td.path());
+    cloner.clone(
+        CloneMethodKind::from(method_name).unwrap(),
+        spec,
+        version,
+        extra,
+    )?;
+    Ok(td)
+}
+
+fn assert_err(err: Result<TempDir, Error>, expected: &str) {
     let err = err.expect_err("got Ok");
     let s = err.to_string();
     if !s.contains(expected) {
@@ -11,15 +29,10 @@ fn assert_err(err: Result<(), Error>, expected: &str) {
     }
 }
 
-fn assert_downloaded(path: &str) {
-    let path = Path::new(path);
+fn assert_downloaded(dir: &TempDir, path: &str) {
+    let path = dir.path().join(path);
     if !path.exists() {
         panic!("Expected download to {:?}", path);
-    }
-    if path.is_dir() {
-        fs::remove_dir_all(path).unwrap();
-    } else {
-        fs::remove_file(path).unwrap();
     }
 }
 
@@ -46,8 +59,8 @@ fn parse_version_empty() {
 
 #[test]
 fn parse_version_req_ok() {
-    clone("crate", "bitflags", Some("=1.0.5"), &[]).unwrap();
-    assert_downloaded("bitflags-1.0.5");
+    let td = clone("crate", "bitflags", Some("=1.0.5"), &[]).unwrap();
+    assert_downloaded(&td, "bitflags-1.0.5");
 }
 
 #[test]
@@ -73,17 +86,12 @@ fn clone_fossil() {
     // Ensure `fossil` is a spawnable process on the machine
     assert!(std::process::Command::new("fossil").output().is_ok());
 
-    clone("fossil", "rs-graph", None, &["graph.fossil"]).unwrap();
-    assert_downloaded("graph.fossil");
-
-    // Also delete the *-journal file
-    if Path::new("./graph.fossil-journal").exists() {
-        fs::remove_file(Path::new("./graph.fossil-journal")).unwrap();
-    }
+    let td = clone("fossil", "rs-graph", None, &["graph.fossil"]).unwrap();
+    assert_downloaded(&td, "graph.fossil");
 }
 
 #[test]
 fn clone_git_args() {
-    clone("git", "bitflags", None, &["--depth=1", "bf"]).unwrap();
-    assert_downloaded("bf");
+    let td = clone("git", "bitflags", None, &["--depth=1", "bf"]).unwrap();
+    assert_downloaded(&td, "bf");
 }

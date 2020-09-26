@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use semver;
 use serde_json::Value;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use tar::Archive;
 
@@ -78,8 +78,10 @@ pub struct Cloner {
     /// Defaults to https://api.bitbucket.org/2.0/repositories
     bitbutcket_url: String,
 
-    /// Output directory of the Crate source code. Defaults to `std::env::current_dir()`
-    out_dir: PathBuf,
+    /// Output directory of the Crate source code.
+    ///
+    /// Uses `std::env::current_dir()` if `None`.
+    out_dir: Option<PathBuf>,
 }
 
 fn check_semver_req(version: &str) -> Result<String, Error> {
@@ -130,32 +132,55 @@ fn reqwest_get(url: &str) -> reqwest::Result<reqwest::blocking::Response> {
 }
 
 impl Cloner {
-    /// Create a Crate Cloner from specified settings
-    pub fn new(
-        registry_url: &str,
-        github_url: &str,
-        gitlab_url: &str,
-        bitbutcket_url: &str,
-        out_dir: &Path,
-    ) -> Cloner {
-        Cloner {
-            registry_url: registry_url.to_string(),
-            github_url: github_url.to_string(),
-            gitlab_url: gitlab_url.to_string(),
-            bitbutcket_url: bitbutcket_url.to_string(),
-            out_dir: out_dir.into(),
-        }
-    }
-
     /// Create a Crate Cloner using all the default settings
-    pub fn default() -> std::io::Result<Cloner> {
-        Ok(Cloner {
+    pub fn new() -> Cloner {
+        Cloner {
             registry_url: DEFAULT_REGISTRY_URL.to_string(),
             github_url: DEFAULT_GITHUB_URL.to_string(),
             gitlab_url: DEFAULT_GITLAB_URL.to_string(),
             bitbutcket_url: DEFAULT_BITBUCKET_URL.to_string(),
-            out_dir: env::current_dir()?,
-        })
+            out_dir: None,
+        }
+    }
+
+    /// Sets the URL to use for downloading `.crate` files from crates.io.
+    pub fn set_registry_url(&mut self, value: impl Into<String>) -> &mut Self {
+        self.registry_url = value.into();
+        self
+    }
+
+    /// Sets the URL to use for downloading GitHub repositories.
+    pub fn set_github_url(&mut self, value: impl Into<String>) -> &mut Self {
+        self.github_url = value.into();
+        self
+    }
+
+    /// Sets the URL to use for downloading GitLab repositories.
+    pub fn set_gitlab_url(&mut self, value: impl Into<String>) -> &mut Self {
+        self.gitlab_url = value.into();
+        self
+    }
+
+    /// Sets the URL to use for downloading Bitbucket repositories.
+    pub fn set_bitbucket_url(&mut self, value: impl Into<String>) -> &mut Self {
+        self.bitbutcket_url = value.into();
+        self
+    }
+
+    /// Sets the directory where the clone will be done.
+    ///
+    /// The package will appear as a directory underneath the given path.
+    pub fn set_out_dir(&mut self, value: impl Into<PathBuf>) -> &mut Self {
+        self.out_dir = Some(value.into());
+        self
+    }
+
+    /// Returns the output directory.
+    fn out_dir(&self) -> Result<PathBuf, Error> {
+        Ok(self
+            .out_dir
+            .as_ref()
+            .map_or_else(|| env::current_dir(), |v| Ok(v.to_path_buf()))?)
     }
 
     /// Clones a crate using the provided method.
@@ -398,7 +423,7 @@ impl Cloner {
                 );
             }
 
-            entry.unpack_in(&self.out_dir).context(format!(
+            entry.unpack_in(&self.out_dir()?).context(format!(
                 "failed to unpack entry at `{}`",
                 entry_path.display()
             ))?;
@@ -413,7 +438,7 @@ impl Cloner {
             .arg("clone")
             .arg(repo)
             .args(extra)
-            .current_dir(&self.out_dir)
+            .current_dir(&self.out_dir()?)
             .status()
             .context(format!("Failed to run `{}`.", method))?;
         if !status.success() {
@@ -436,7 +461,7 @@ pub fn clone(
     version: Option<&str>,
     extra: &[&str],
 ) -> Result<(), Error> {
-    Cloner::default()?.clone(
+    Cloner::new().clone(
         CloneMethodKind::from(method_name).unwrap(),
         spec,
         version,

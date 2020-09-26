@@ -24,6 +24,8 @@ semver = "0.10.0"
 serde_json = "1.0.40"
 tar = { version = "0.4.26", default-features = false }
 
+[dev-dependencies]
+tempfile = "3.1.0"
 
 [lib]
 name = "cargo_clone"
