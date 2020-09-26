@@ -26,6 +26,11 @@ The `crate` method can also take a version to fetch a specific version:
 
 `cargo clone --version=1.0.1 bitflags`
 
+If passed a Cargo-style package spec with a version requirement, it will
+always use the `crate` method to download directly from crates.io:
+
+`cargo clone bitflags:^1.0`
+
 Extra arguments are passed to the VCS command:
 
 `cargo clone bitflags --depth=1 bf`
