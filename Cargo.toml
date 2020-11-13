@@ -13,19 +13,22 @@ edition = "2018"
 include = ["/src"]
 
 [dependencies]
-anyhow = "1.0.33"
-clap = "2.33.3"
-env_logger = "0.7.1"
-flate2 = "1.0.18"
+anyhow = "1.0.35"
+clap = { version = "2.33.3", optional = true }
+env_logger = { version = "0.8.2", optional = true }
+flate2 = "1.0.19"
 log = "0.4.11"
-regex = "1.4.1"
-reqwest = { version = "0.10.8", features = ["blocking", "json"] }
+regex = "1.4.2"
+reqwest = { version = "0.10.9", features = ["blocking", "json"] }
 semver = "0.11.0"
-serde_json = "1.0.59"
+serde_json = "1.0.60"
 tar = { version = "0.4.30", default-features = false }
 
 [dev-dependencies]
 tempfile = "3.1.0"
+
+[features]
+default = ["clap", "env_logger"]
 
 [lib]
 name = "cargo_clone"
@@ -35,3 +38,4 @@ test = false
 name = "cargo-clone"
 path = "src/main.rs"
 test = false
+required-features = ["default"]
