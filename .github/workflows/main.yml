@@ -38,7 +38,7 @@ jobs:
     - name: Install fossil (Windows)
       run: |
         mkdir fossil
-        echo ::add-path::./fossil
+        echo ./fossil >> $GITHUB_PATH
         cd fossil
         curl -LJO https://www.fossil-scm.org/fossil/uv/fossil-w64-2.12.1.zip
         unzip fossil-w64-2.12.1.zip
