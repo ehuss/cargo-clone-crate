@@ -13,15 +13,15 @@ edition = "2018"
 include = ["/src"]
 
 [dependencies]
-anyhow = "1.0.35"
+anyhow = "1.0.37"
 clap = { version = "2.33.3", optional = true }
 env_logger = { version = "0.8.2", optional = true }
 flate2 = "1.0.19"
 log = "0.4.11"
 regex = "1.4.2"
-reqwest = { version = "0.10.9", features = ["blocking", "json"] }
+reqwest = { version = "0.11.0", features = ["blocking", "json"] }
 semver = "0.11.0"
-serde_json = "1.0.60"
+serde_json = "1.0.61"
 tar = { version = "0.4.30", default-features = false }
 
 [dev-dependencies]
