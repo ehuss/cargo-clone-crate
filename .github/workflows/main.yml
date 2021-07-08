@@ -29,22 +29,6 @@ jobs:
           rust: stable-msvc
     steps:
     - uses: actions/checkout@v2
-    - name: Install fossil (Ubuntu)
-      run: sudo apt update -y && sudo apt install fossil -y
-      if: matrix.os == 'ubuntu-latest'
-    - name: Install fossil (macOS)
-      run: brew install fossil
-      if: matrix.os == 'macos-latest'
-    - name: Install fossil (Windows)
-      run: |
-        mkdir fossil
-        echo ./fossil >> $GITHUB_PATH
-        cd fossil
-        curl -LJO https://www.fossil-scm.org/fossil/uv/fossil-w64-2.12.1.zip
-        unzip fossil-w64-2.12.1.zip
-        curl -LJO https://curl.haxx.se/ca/cacert.pem
-        ./fossil set --global ssl-ca-location $(pwd)/cacert.pem
-      if: matrix.os == 'windows-latest'
     - name: Install rust
       run: rustup update --no-self-update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
     - name: Run tests

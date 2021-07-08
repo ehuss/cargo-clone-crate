@@ -82,6 +82,10 @@ fn unknown_crate() {
 }
 
 #[test]
+// Fossil tests cause a lot of trouble on CI.
+// Currently chiselapp.com is having a certificate problem
+// (see https://groups.google.com/g/comp.lang.tcl/c/fgAfAFfiHPo)
+#[ignore]
 fn clone_fossil() {
     // Ensure `fossil` is a spawnable process on the machine
     assert!(std::process::Command::new("fossil").output().is_ok());
