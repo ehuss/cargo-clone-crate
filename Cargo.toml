@@ -1,6 +1,6 @@
 [package]
 name = "cargo-clone-crate"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Eric Huss <eric@huss.org>"]
 description = "Cargo subcommand to clone a repo from the registry."
 homepage = "https://github.com/ehuss/cargo-clone-crate"
@@ -14,8 +14,8 @@ include = ["/src"]
 
 [dependencies]
 anyhow = "1.0.37"
-clap = { version = "2.33.3", optional = true }
-env_logger = { version = "0.8.2", optional = true }
+clap = { version = "3.1.18", optional = true, features = ["cargo"] }
+env_logger = { version = "0.9.0", optional = true }
 flate2 = "1.0.19"
 log = "0.4.11"
 regex = "1.4.2"
