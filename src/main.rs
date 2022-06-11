@@ -1,5 +1,5 @@
 use cargo_clone;
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{Arg, Command};
 use env_logger::{Builder, Target};
 use std::{env, io::Write, process::exit};
 
@@ -29,19 +29,17 @@ fn start_logging() {
 fn main() {
     start_logging();
 
-    let matches = App::new("cargo-clone")
+    let matches = Command::new("cargo-clone")
         .version(clap::crate_version!())
         .bin_name("cargo")
-        .setting(AppSettings::GlobalVersion)
-        .setting(AppSettings::SubcommandRequired)
-        .setting(AppSettings::ColoredHelp)
+        .subcommand_required(true)
+        .propagate_version(true)
         .subcommand(
-            SubCommand::with_name("clone")
+            Command::new("clone")
                 .about("Clone a package from crates.io.")
-                .setting(AppSettings::AllowLeadingHyphen)
-                .setting(AppSettings::ColoredHelp)
+                .allow_hyphen_values(true)
                 .arg(
-                    Arg::with_name("method")
+                    Arg::new("method")
                         .long("method")
                         .takes_value(true)
                         .possible_values(&["crate", "git", "hg", "pijul", "fossil", "auto"])
@@ -49,20 +47,20 @@ fn main() {
                         .help("Method to fetch package."),
                 )
                 .arg(
-                    Arg::with_name("name")
+                    Arg::new("name")
                         .required(true)
                         .help("Package name to clone."),
                 )
                 .arg(
-                    Arg::with_name("version")
+                    Arg::new("version")
                         .long("version")
                         .takes_value(true)
                         .help("Version to download."),
                 )
                 .arg(
-                    Arg::with_name("extra")
+                    Arg::new("extra")
                         .allow_hyphen_values(true)
-                        .multiple(true)
+                        .multiple_occurrences(true)
                         .help("Additional arguments passed to clone command."),
                 ),
         )
