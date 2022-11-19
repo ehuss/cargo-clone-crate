@@ -34,4 +34,6 @@ jobs:
     - name: Run tests
       env:
         RUSTFLAGS: "-Dwarnings"
-      run: cargo test
+      run: cargo test --locked
+    - name: Rustls test
+      run: cargo test -F rustls
