@@ -31,6 +31,10 @@ always use the `crate` method to download directly from crates.io:
 
 `cargo clone bitflags:^1.0`
 
+The `@` style syntax is also supported:
+
+`cargo clone regex@1.7.1`
+
 Extra arguments are passed to the VCS command:
 
 `cargo clone bitflags --depth=1 bf`

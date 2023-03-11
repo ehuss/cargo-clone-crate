@@ -210,7 +210,7 @@ impl Cloner {
         version: Option<&str>,
         extra: &[&str],
     ) -> Result<(), Error> {
-        let mut parts = spec.splitn(2, ':');
+        let mut parts = spec.splitn(2, &[':', '@']);
         let name = parts.next().unwrap();
         let spec_version_req = parts.next();
         if spec_version_req.is_some() && version.is_some() {
@@ -358,8 +358,9 @@ impl Cloner {
 
     /// Grab package info from crates.io.
     fn get_pkg_info(&self, name: &str) -> Result<Value, Error> {
-        let pkg_info = reqwest_get(&format!("{}/api/v1/crates/{}", self.registry_url, name))
-            .context("Failed to fetch package info from crates.io.")?;
+        let url = format!("{}/api/v1/crates/{}", self.registry_url, name);
+        debug!("GET {url}");
+        let pkg_info = reqwest_get(&url).context("Failed to fetch package info from crates.io.")?;
         let code = pkg_info.status();
         match code {
             StatusCode::OK => {}

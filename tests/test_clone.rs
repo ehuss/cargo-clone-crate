@@ -77,6 +77,12 @@ fn version_with_method() {
 }
 
 #[test]
+fn at_style() {
+    let td = clone("crate", "bitflags@1.0.5", None, &[]).unwrap();
+    assert_downloaded(&td, "bitflags-1.0.5");
+}
+
+#[test]
 fn unknown_crate() {
     assert_err(clone("auto", "test", None, &[]), "not found");
 }
