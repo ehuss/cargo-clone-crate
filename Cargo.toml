@@ -14,7 +14,7 @@ include = ["/src"]
 
 [dependencies]
 anyhow = "1.0.37"
-clap = { version = "3.1.18", optional = true, features = ["cargo"] }
+clap = { version = "4.4.6", optional = true, features = ["cargo"] }
 env_logger = { version = "0.9.0", optional = true }
 flate2 = "1.0.19"
 log = "0.4.11"
@@ -28,7 +28,8 @@ tar = { version = "0.4.30", default-features = false }
 tempfile = "3.1.0"
 
 [features]
-default = ["clap", "env_logger", "reqwest/default-tls"]
+bin = ["dep:clap", "dep:env_logger"]
+default = ["bin", "reqwest/default-tls"]
 rustls = ["reqwest/rustls-tls"]
 
 [lib]

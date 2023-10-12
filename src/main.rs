@@ -1,5 +1,5 @@
 use cargo_clone;
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 use env_logger::{Builder, Target};
 use std::{env, io::Write, process::exit};
 
@@ -31,6 +31,7 @@ fn main() {
 
     let matches = Command::new("cargo-clone")
         .version(clap::crate_version!())
+        .disable_version_flag(true)
         .bin_name("cargo")
         .subcommand_required(true)
         .propagate_version(true)
@@ -41,8 +42,8 @@ fn main() {
                 .arg(
                     Arg::new("method")
                         .long("method")
-                        .takes_value(true)
-                        .possible_values(&["crate", "git", "hg", "pijul", "fossil", "auto"])
+                        .action(ArgAction::Set)
+                        .value_parser(["crate", "git", "hg", "pijul", "fossil", "auto"])
                         .default_value("auto")
                         .help("Method to fetch package."),
                 )
@@ -54,13 +55,13 @@ fn main() {
                 .arg(
                     Arg::new("version")
                         .long("version")
-                        .takes_value(true)
+                        .action(ArgAction::Set)
                         .help("Version to download."),
                 )
                 .arg(
                     Arg::new("extra")
                         .allow_hyphen_values(true)
-                        .multiple_occurrences(true)
+                        .action(ArgAction::Append)
                         .help("Additional arguments passed to clone command."),
                 ),
         )
@@ -69,19 +70,19 @@ fn main() {
         .subcommand_matches("clone")
         .expect("Expected `clone` subcommand.");
 
-    let method = submatches.value_of("method").unwrap();
-    let name = submatches.value_of("name").unwrap();
-    let version = submatches.value_of("version");
+    let method = submatches.get_one::<String>("method").unwrap();
+    let name = submatches.get_one::<String>("name").unwrap();
+    let version = submatches.get_one::<String>("version");
     let extra: Vec<&str> = submatches
-        .values_of("extra")
-        .map_or_else(Vec::new, |e| e.collect());
+        .get_many::<String>("extra")
+        .map_or_else(Vec::new, |e| e.map(|x| x.as_str()).collect());
 
     let cloner = cargo_clone::Cloner::new();
     let result = cloner.clone(
         // UNWRAP: The argument parser should guarantee only sane values get passed here
         cargo_clone::CloneMethodKind::from(method).unwrap(),
         name,
-        version,
+        version.map(|x| x.as_str()),
         &extra,
     );
     if let Err(e) = result {
