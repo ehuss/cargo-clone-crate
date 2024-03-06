@@ -9,7 +9,6 @@ use anyhow::{anyhow, bail, Context, Error};
 use flate2::read::GzDecoder;
 use regex::Regex;
 use reqwest::StatusCode;
-use semver;
 use serde_json::Value;
 use std::env;
 use std::path::PathBuf;
