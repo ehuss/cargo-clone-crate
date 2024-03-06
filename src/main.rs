@@ -1,4 +1,3 @@
-use cargo_clone;
 use clap::{Arg, ArgAction, Command};
 use env_logger::{Builder, Target};
 use std::{env, io::Write, process::exit};
